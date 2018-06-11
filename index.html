@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<title>GFX demo</title>
+		<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+		<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+		<style type="text/css">
+			body {
+				background-color: #000000;
+
+				overflow: hidden;
+			}
+		</style>
+		<script src="three.js"></script>
+		<script src="Detector.js"></script>
+	</head>
+	<body>
+		<div id="WebGLCanvas">
+
+		<script>
+			var scene;
+			var poslabel;
+			var camera;
+			var firstrun = 1;
+
+			var light;
+
+
+			var loader;
+
+
+			var movedir = 0;
+
+			var carMesh;
+			var cubeMesh;
+			var x=0.0; var y=0.0; var z=0.0;
+			var up=false;var down=false; var left=false;var right=false;
+
+			initializeScene();
+
+			animateScene();
+
+			function initializeScene(){
+				if(Detector.webgl){
+					renderer = new THREE.WebGLRenderer({antialias:true});
+
+				} else {
+					renderer = new THREE.CanvasRenderer();
+				}
+
+				renderer.setClearColor(0x00aaFF, 1);
+
+				canvasWidth = window.innerWidth;
+				canvasHeight = window.innerHeight;
+
+				renderer.setSize(canvasWidth, canvasHeight);
+
+				document.getElementById("WebGLCanvas").appendChild(renderer.domElement);
+
+				scene = new THREE.Scene();
+
+				camera = new THREE.PerspectiveCamera(45, canvasWidth / canvasHeight, 1, 200000);
+				camera.position.set(0, 150, -300);
+				camera.lookAt(new THREE.Vector3(0.0,4.0,1.0));//0.0,60.0,0.0));
+				scene.add(camera);
+
+
+				var cubeGeometry = new THREE.CubeGeometry(60.0,60.0,60.0);
+
+				var texture = new THREE.ImageUtils.loadTexture("char.jpg");
+				var cubeMaterial = new THREE.MeshBasicMaterial({
+					map:texture,
+					side:THREE.DoubleSide
+				});
+				cubeMesh = new THREE.Mesh(cubeGeometry,cubeMaterial);
+				cubeMesh.position.set(0.0,30.0,100.0);
+				scene.add(cubeMesh);
+
+
+				var ftexture = new THREE.ImageUtils.loadTexture("floor.jpg");
+				var floorMaterial = new THREE.MeshBasicMaterial({map:ftexture,side:THREE.DoubleSide});
+				ftexture.wrapS = ftexture.wrapT = THREE.RepeatWrapping;
+				ftexture.repeat.set(50,50);
+				var floorGeometry = new THREE.PlaneGeometry(4000,4000,10,10);
+				var floor = new THREE.Mesh(floorGeometry, floorMaterial);
+				floor.position.y = 0;
+				floor.rotation.x = Math.PI / 2;
+				scene.add(floor);
+
+				document.addEventListener("keydown", onKeyDown, false);
+				document.addEventListener("keyup", onKeyUp,false);
+				document.addEventListener("mousemove", onMouseMove,false);
+
+				createText("pos", 0, 0, "Your position: 0, 0, 0");
+				createText("instruction",0,20,"Use the up down arrow keys/w+s to move, left and right mouse movement to steer. Up and down mouse to pan!");
+
+
+    light = new THREE.DirectionalLight(0xffffff);
+
+    light.position.set(0, 150, -250);
+    light.castShadow = true;
+    light.shadowCameraLeft = -60;
+    light.shadowCameraTop = -60;
+    light.shadowCameraRight = 60;
+    light.shadowCameraBottom = 60;
+    light.shadowCameraNear = 1;
+    light.shadowCameraFar = 1000;
+    light.shadowBias = -.0001
+    light.shadowMapWidth = light.shadowMapHeight = 1024;
+    light.shadowDarkness = .7;
+
+    scene.add(light);
+
+
+				loader = new THREE.JSONLoader();
+				loader.load('models/car/car.js', function (geometry, materials){
+
+					var material = new THREE.MeshLambertMaterial({
+						map:THREE.ImageUtils.loadTexture("models/car/textures/gtare.jpg"),
+					        colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+					        colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+        					colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+      					});
+					carMesh = new THREE.Mesh(
+						geometry,
+						material
+					);
+
+					carMesh.receiveShadow = true;
+					carMesh.castShadow = true;
+					carMesh.position.x = 0;carMesh.position.y=-0.9;carMesh.position.z=0;
+					scene.add(carMesh);
+				});
+
+
+				var al = new THREE.AmbientLight(0xffff44);
+				scene.add(al);
+
+
+
+			}
+
+			function postInit(){
+				carMesh.add(camera);
+				camera.add(light);
+
+				firstrun=false;
+			}
+
+			function onMouseMove(e){
+				var left = (window.innerWidth / 4);
+				var right = (window.innerWidth - (window.innerWidth/4));
+				var top = (window.innerHeight / 4);
+				var bottom = (window.innerHeight - (window.innerHeight/4));
+				if(e.pageX>right){
+					//movedir=1;
+				}else if(e.pageX<left){
+					movedir=2;
+				}else if(e.pageY<top){
+					movedir=3;
+				}else if(e.pageY>bottom){
+					movedir=4;
+				}else{
+					movedir=0;
+				}
+			}
+
+			function createText(id, x, y, string){
+
+				var text2 = document.createElement('div');
+				text2.id = id;
+				text2.style.position = 'absolute';
+				
+				text2.style.width = 100;
+				text2.style.height = 100;
+				text2.style.color = "white";
+				text2.innerHTML = string;
+				text2.style.top = y + 'px';
+				text2.style.left = x + 'px';
+				document.body.appendChild(text2);
+
+			}
+
+			function toXYCoords (pos) {
+			        var vector = projector.projectVector(pos.clone(), camera);
+			        vector.x = (vector.x + 1)/2 * window.innerWidth;
+			        vector.y = -(vector.y - 1)/2 * window.innerHeight;
+			        return vector;
+			}
+
+			function onKeyUp(e){
+				var kc = event.which;
+				if(kc==38||kc==37||kc==39||kc==40 || kc == 87 || kc==83){
+					up=false;down=false;left=false;right=false;
+					cubeMesh.rotation.x=0;cubeMesh.rotation.y=0;cubeMesh.rotation.z=0;
+				}
+			}
+
+			function onKeyDown(e){
+				var kc = event.which;
+				if(kc==38 || kc==87){
+					up = true;
+					down=false;left=false;right=false;
+				}else if(kc==40 || kc==83){
+					down=true;
+					up=false;left=false;right=false;
+				}else if(kc==37){
+					left = true;
+					up=false;down=false;right=false;
+				}else if(kc==39){
+					right=true;
+					up=false;down=false;left=false;
+				}
+
+			}
+
+			function animateScene(){
+				if(firstrun && carMesh){
+					postInit();
+				}
+				if(carMesh){
+//                                	camera.position.set(carMesh.position.x, carMesh.position.y+120, carMesh.position.z-250);
+//					camera.rotation.set(carMesh.rotation);
+//                                	camera.lookAt(carMesh.position);
+				}
+				cubeMesh.rotation.y+=0.02;
+
+				if(movedir==1 && up || down){
+					carMesh.rotation.y-=0.03;
+				}else if(movedir==2 && up || down){
+					carMesh.rotation.y+=0.03;
+				}else if(movedir==3){
+					camera.rotation.x-=0.01;
+				}else if(movedir==4){
+					camera.rotation.x+=0.01;
+				}
+
+				if(up){
+					carMesh.translateZ(7);
+				}else if(down){
+					carMesh.translateZ(-7);
+				}else if(left){
+						carMesh.rotation.y+=0.1;
+				}else if(right){
+						carMesh.rotation.y-=0.1;
+				}
+				if(!poslabel){
+					poslabel=document.getElementById("pos");
+				}
+if(carMesh){
+				pos.innerHTML="Your position: "+carMesh.position.x+", "+carMesh.position.y+", "+carMesh.position.z+" - "+carMesh.rotation.x+", "+carMesh.rotation.y+", "+carMesh.rotation.z;
+}
+				requestAnimationFrame(animateScene);
+				renderScene();
+			}
+
+			function renderScene(){
+				renderer.render(scene, camera);
+			}
+		</script>
+	</body>
+</html>
