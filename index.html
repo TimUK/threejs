@@ -155,7 +155,7 @@
 				var top = (window.innerHeight / 4);
 				var bottom = (window.innerHeight - (window.innerHeight/4));
 				if(e.pageX>right){
-					//movedir=1;
+					movedir=1;
 				}else if(e.pageX<left){
 					movedir=2;
 				}else if(e.pageY<top){
@@ -192,9 +192,20 @@
 
 			function onKeyUp(e){
 				var kc = event.which;
+
+				if(kc==38 || kc==87){
+					up = false;
+				}else if(kc==40 || kc==83){
+					down=false;
+				}else if(kc==37){
+					left = false;
+				}else if(kc==39){
+					right=false;
+				}
+
 				if(kc==38||kc==37||kc==39||kc==40 || kc == 87 || kc==83){
-					up=false;down=false;left=false;right=false;
-					cubeMesh.rotation.x=0;cubeMesh.rotation.y=0;cubeMesh.rotation.z=0;
+					//up=false;down=false;left=false;right=false;
+					//cubeMesh.rotation.x=0;cubeMesh.rotation.y=0;cubeMesh.rotation.z=0;
 				}
 			}
 
@@ -202,16 +213,12 @@
 				var kc = event.which;
 				if(kc==38 || kc==87){
 					up = true;
-					down=false;left=false;right=false;
 				}else if(kc==40 || kc==83){
 					down=true;
-					up=false;left=false;right=false;
 				}else if(kc==37){
 					left = true;
-					up=false;down=false;right=false;
 				}else if(kc==39){
 					right=true;
-					up=false;down=false;left=false;
 				}
 
 			}
@@ -227,9 +234,9 @@
 				}
 				cubeMesh.rotation.y+=0.02;
 
-				if(movedir==1 && up || down){
+				if(movedir==1 && (up || down)){
 					carMesh.rotation.y-=0.03;
-				}else if(movedir==2 && up || down){
+				}else if(movedir==2 && (up || down)){
 					carMesh.rotation.y+=0.03;
 				}else if(movedir==3){
 					camera.rotation.x-=0.01;
@@ -241,10 +248,11 @@
 					carMesh.translateZ(7);
 				}else if(down){
 					carMesh.translateZ(-7);
-				}else if(left){
-						carMesh.rotation.y+=0.1;
+				}
+				if(left){
+						carMesh.rotation.y+=0.02;
 				}else if(right){
-						carMesh.rotation.y-=0.1;
+						carMesh.rotation.y-=0.02;
 				}
 				if(!poslabel){
 					poslabel=document.getElementById("pos");
